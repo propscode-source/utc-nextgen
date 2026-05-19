@@ -16,6 +16,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Skeleton } from "@/components/ui/skeleton";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faUserPlus, faSpinner, faMagnifyingGlass } from "@fortawesome/free-solid-svg-icons";
 
@@ -132,7 +133,18 @@ export function MembersToolbar({ labId }: { labId: string }) {
             </div>
             <div className="rounded-md border max-h-72 overflow-y-auto scrollbar-hide">
               {loading && (
-                <div className="px-4 py-6 text-center text-xs text-muted-foreground">Mencari…</div>
+                <ul className="divide-y">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <li key={i} className="flex items-center gap-3 px-3 py-2">
+                      <Skeleton className="h-8 w-8 rounded-full" />
+                      <div className="flex-1 space-y-1.5">
+                        <Skeleton className="h-3 w-1/3" />
+                        <Skeleton className="h-2.5 w-2/3" />
+                      </div>
+                      <Skeleton className="h-3 w-3" />
+                    </li>
+                  ))}
+                </ul>
               )}
               {!loading && query.trim().length < 2 && (
                 <div className="px-4 py-6 text-center text-xs text-muted-foreground">

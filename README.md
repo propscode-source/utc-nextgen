@@ -73,8 +73,34 @@ Sistem Training Center Terpusat Berbasis Gamifikasi untuk 8 lab Fakultas Ilmu Ko
   - **Template designer per course** `/labs/[slug]/courses/[id]/edit/certificates/template` — upload background URL + drag-to-position fields, edit per-field (text/x/y/font/color/align/width/qrSize). Field types: title, recipientName, certNumber, courseTitle, qr, custom, dst.
   - **Backfill** sertifikat untuk mahasiswa yang sudah lulus final exam tapi belum dapat sertifikat (idempotent + award CERT_EARNED 100 poin)
   - **Admin manage** `/admin/certificates` (LAB_ADMIN + SUPERADMIN) — list semua course dengan tombol Template + Backfill, list semua sertifikat lintas course; nav "Kelola Sertifikat" untuk admin, "Sertifikat" personal khusus mahasiswa
-- [ ] **Fase 8** — Modul 8 Analytics + export Excel
-- [ ] **Fase 9** — Modul 9 Notifikasi (in-app + email digest)
+- [~] **Fase 8** — Modul 8 Analytics + export CSV (kompatibel Excel)
+  - Landing `/analytics` (LAB_ADMIN + SUPERADMIN) — stat agregat + grafik (line tren sertifikat 12 bulan, bar top course) + nav 3 sub-laporan
+  - Grafik SVG inline (zero-dep) — `LineChart`, `BarChart`, `Donut` di [src/components/charts.tsx](src/components/charts.tsx)
+  - **Analisa AI** (Google Gemini) — endpoint `POST /api/analytics/ai-insights` mengirim snapshot agregat (tanpa PII) ke model, mengembalikan: program prioritas, program unggulan, saran konkret untuk manajer lab (konten/operasional/kolaborasi/asesmen), saran untuk pencapaian IKU (IKU 1/2/6/7/8), dan risiko. UI di [src/components/ai-insights.tsx](src/components/ai-insights.tsx). Aktifkan dengan mengisi `GEMINI_API_KEY` di `.env` (dapat gratis di https://aistudio.google.com/app/apikey, model default `gemini-2.0-flash`).
+  - **Mahasiswa Bersertifikasi** `/analytics/certified` — daftar penerima sertifikat + filter lab/course/tanggal/pencarian + export CSV
+  - **Laporan per Pelatihan** `/analytics/per-course` — agregasi per course: enrollment, sertifikat terbit, % kelulusan, attempt final, lulus final, avg skor, total pelanggaran + export CSV
+  - **Custom Report** `/analytics/custom` — pilih dataset (mahasiswa / enrollment / sertifikat / sesi ujian) + parameter lab, course, rentang tanggal, status, search + export CSV
+  - Scope otomatis: superadmin lihat semua lab; LAB_ADMIN dan asisten hanya lab yang dikelola
+  - Export endpoint terpadu `/api/analytics/export?type=certified|per-course|custom` (CSV UTF-8 BOM)
+- [x] **Fase 9** — Modul 9 Kelola Pengguna, Role, Rule, & Policy (flexible RBAC)
+  - **Schema RBAC** baru: `Permission`, `Policy`, `PolicyPermission`, `CustomRole`, `CustomRolePermission` (rule per role), `CustomRolePolicy`, `UserCustomRole`. Field `User.isActive` untuk soft-disable akun.
+  - **Katalog terpusat** di [src/lib/rbac-catalog.ts](src/lib/rbac-catalog.ts): 50+ permission (kategori: Pengguna, Role&Policy, Lab, TOR&Proker, Course, Quiz&Exam, Proctor, Sertifikat, Merch&Poin, Badge, Analytics), 6 policy bawaan, 4 system custom role (mirroring base role).
+  - **ABAC resolver** di [src/lib/abac.ts](src/lib/abac.ts): `getUserPermissions(userId)` menggabungkan system role (base) + assigned custom roles → policies → permissions, dengan aturan **DENY menang atas ALLOW**.
+  - **Kelola Pengguna** `/admin/users` — list dengan filter (search/role/status), stat per role, CRUD penuh:
+    - Buat akun (otomatis email-verified), assign multiple custom role saat create
+    - Edit data + role bawaan + assignment custom role dalam satu dialog
+    - Toggle aktif/non-aktif (akun non-aktif tidak bisa login & permission-nya kosong)
+    - Reset password (dengan validasi min 8 char)
+    - Hapus akun (terkunci untuk diri sendiri & superadmin terakhir)
+  - **Kelola Role Custom** `/admin/roles` — buat role dengan key/name/baseRole; halaman edit `/admin/roles/[id]` dengan dua tab:
+    - **Policies**: pilih bundle policy reusable
+    - **Rules per permission**: override per-permission (ALLOW/DENY) tri-state — klik tombol untuk berputar Tidak diatur → ALLOW → DENY; bulk per-kategori dan pencarian
+    - Preview **permission efektif** real-time (sudah resolve DENY)
+  - **Kelola Policy** `/admin/policies` — buat policy dengan key + nama; halaman edit dengan tri-state editor permission yang identik UX-nya dengan editor rule role
+  - **Katalog Permission** `/admin/permissions` — view semua permission per kategori; admin bisa menambah permission custom di luar katalog bawaan (untuk fitur internal)
+  - **Lock keamanan**: role/policy/permission `isSystem: true` tidak bisa dihapus (resolver kode bergantung padanya). Key prefix `system.` direservasi.
+  - **Endpoint** terpusat di `/api/admin/{users|roles|policies|permissions}/...` — semua dijaga dengan `userCan(session.user.id, "<permission>")` bukan hardcoded role check.
+  - **Backward-compat**: base role enum tetap (SUPERADMIN/LAB_ADMIN/PROCTOR/MAHASISWA) → sidebar nav, gating lama, dan helper `perms.ts` tetap jalan. RBAC baru adalah layer di atas, opsional untuk delegasi granular.
 
 ## Setup pertama kali
 

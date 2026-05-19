@@ -128,6 +128,11 @@ enum RedemptionStatus {
   CANCELLED
 }
 
+enum PolicyEffect {
+  ALLOW
+  DENY
+}
+
 // =====================================================================
 // AUTH (NextAuth.js v5 — JWT strategy, but adapter tables kept)
 // =====================================================================
@@ -143,6 +148,7 @@ model User {
   prodi         String?
   angkatan      Int?
   role          Role      @default(MAHASISWA)
+  isActive      Boolean   @default(true)
   points        Int       @default(0)
   lastLoginAt   DateTime?
   createdAt     DateTime  @default(now())
@@ -161,6 +167,7 @@ model User {
   adminOfLabs   Lab[]          @relation("LabAdmin")
   lessonProgress LessonProgress[]
   redemptions    MerchRedemption[]
+  customRoles    UserCustomRole[]
 
   @@index([role])
 }
@@ -667,4 +674,110 @@ model Notification {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, read])
+}
+
+// =====================================================================
+// RBAC: Permissions, Policies, Custom Roles (Phase 9)
+// =====================================================================
+// Konsep:
+// - Permission: atom kapabilitas (e.g. "lab.edit"). Katalog dimuat saat seed.
+// - Policy: bundle Permission, bisa di-attach ke banyak Role.
+// - CustomRole: role custom yang bisa dibuat tanpa batas. Setiap CustomRole punya:
+//     * baseRole (enum Role) — fallback untuk gate level-1 (sidebar, dll)
+//     * permissions (langsung) — rule custom per role
+//     * policies — bundle reusable
+// - UserCustomRole: assign custom role ke user (selain base role).
+// Effect ALLOW/DENY: DENY menang. Aturan resolusi ada di src/lib/abac.ts.
+
+model Permission {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  category    String
+  label       String
+  description String?
+  isSystem    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  policyPermissions PolicyPermission[]
+  rolePermissions   CustomRolePermission[]
+
+  @@index([category])
+}
+
+model Policy {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  name        String
+  description String?
+  isSystem    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  permissions  PolicyPermission[]
+  rolePolicies CustomRolePolicy[]
+}
+
+model PolicyPermission {
+  id           String       @id @default(cuid())
+  policyId     String
+  permissionId String
+  effect       PolicyEffect @default(ALLOW)
+
+  policy     Policy     @relation(fields: [policyId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([policyId, permissionId])
+}
+
+model CustomRole {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  name        String
+  description String?
+  baseRole    Role
+  isSystem    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  permissions CustomRolePermission[]
+  policies    CustomRolePolicy[]
+  userRoles   UserCustomRole[]
+
+  @@index([baseRole])
+}
+
+model CustomRolePermission {
+  id           String       @id @default(cuid())
+  customRoleId String
+  permissionId String
+  effect       PolicyEffect @default(ALLOW)
+
+  customRole CustomRole @relation(fields: [customRoleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([customRoleId, permissionId])
+}
+
+model CustomRolePolicy {
+  id           String   @id @default(cuid())
+  customRoleId String
+  policyId     String
+
+  customRole CustomRole @relation(fields: [customRoleId], references: [id], onDelete: Cascade)
+  policy     Policy     @relation(fields: [policyId], references: [id], onDelete: Cascade)
+
+  @@unique([customRoleId, policyId])
+}
+
+model UserCustomRole {
+  id           String   @id @default(cuid())
+  userId       String
+  customRoleId String
+  assignedAt   DateTime @default(now())
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  customRole CustomRole @relation(fields: [customRoleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, customRoleId])
+  @@index([userId])
 }

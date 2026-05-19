@@ -12,6 +12,11 @@ import {
   LabMemberRole,
 } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import {
+  PERMISSION_CATALOG,
+  POLICY_CATALOG,
+  SYSTEM_ROLE_CATALOG,
+} from "../src/lib/rbac-catalog";
 
 const prisma = new PrismaClient();
 
@@ -499,6 +504,80 @@ async function main() {
       create: { labId: labJK.id, userId: mhs2.id, role: LabMemberRole.ASSISTANT },
     });
   }
+
+  // ---------- RBAC: Permission + Policy + Built-in CustomRole (Phase 9) ----------
+  console.log("Seeding RBAC catalog…");
+  // 1. Permissions
+  for (const p of PERMISSION_CATALOG) {
+    await prisma.permission.upsert({
+      where: { key: p.key },
+      update: { category: p.category, label: p.label, description: p.description, isSystem: true },
+      create: {
+        key: p.key,
+        category: p.category,
+        label: p.label,
+        description: p.description,
+        isSystem: true,
+      },
+    });
+  }
+
+  // 2. Policies + relasi PolicyPermission
+  for (const pol of POLICY_CATALOG) {
+    const policy = await prisma.policy.upsert({
+      where: { key: pol.key },
+      update: { name: pol.name, description: pol.description, isSystem: true },
+      create: {
+        key: pol.key,
+        name: pol.name,
+        description: pol.description,
+        isSystem: true,
+      },
+    });
+    // Sync permission attachments idempotently: replace all
+    await prisma.policyPermission.deleteMany({ where: { policyId: policy.id } });
+    for (const permKey of pol.permissionKeys) {
+      const permission = await prisma.permission.findUnique({ where: { key: permKey } });
+      if (!permission) continue;
+      await prisma.policyPermission.create({
+        data: {
+          policyId: policy.id,
+          permissionId: permission.id,
+          effect: "ALLOW",
+        },
+      });
+    }
+  }
+
+  // 3. Built-in CustomRole (system.*) + attach policies
+  for (const role of SYSTEM_ROLE_CATALOG) {
+    const customRole = await prisma.customRole.upsert({
+      where: { key: role.key },
+      update: {
+        name: role.name,
+        description: role.description,
+        baseRole: role.baseRole as Role,
+        isSystem: true,
+      },
+      create: {
+        key: role.key,
+        name: role.name,
+        description: role.description,
+        baseRole: role.baseRole as Role,
+        isSystem: true,
+      },
+    });
+    // Replace policy attachments
+    await prisma.customRolePolicy.deleteMany({ where: { customRoleId: customRole.id } });
+    for (const policyKey of role.policyKeys) {
+      const policy = await prisma.policy.findUnique({ where: { key: policyKey } });
+      if (!policy) continue;
+      await prisma.customRolePolicy.create({
+        data: { customRoleId: customRole.id, policyId: policy.id },
+      });
+    }
+  }
+  console.log(`  ${PERMISSION_CATALOG.length} permission, ${POLICY_CATALOG.length} policy, ${SYSTEM_ROLE_CATALOG.length} system role.`);
 
   console.log("Seed selesai.");
   console.log("Akun login default (password: password123):");

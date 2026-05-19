@@ -4,48 +4,58 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* IT Theme — UTC NextGen
+       Inspired by the navy + gold logo. Navy = trust/engineering,
+       gold = achievement/highlight, circuit lines for tech feel. */
+    --background: 210 40% 98%;
+    --foreground: 222 47% 11%;
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 199 89% 48%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 199 89% 48%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 220 70% 22%;            /* deep navy from logo */
+    --primary-foreground: 42 60% 96%;
+    --secondary: 214 32% 94%;
+    --secondary-foreground: 222 47% 14%;
+    --muted: 214 25% 95%;
+    --muted-foreground: 215 16% 42%;
+    --accent: 42 78% 52%;              /* gold from logo */
+    --accent-foreground: 222 47% 12%;
+    --destructive: 0 75% 50%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 214 28% 88%;
+    --input: 214 28% 88%;
+    --ring: 220 70% 30%;
     --radius: 0.625rem;
+
+    /* Circuit grid tint (subtle) */
+    --grid-line: 220 35% 70%;
+    --grid-glow: 42 78% 55%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 6.5%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 6.5%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 199 89% 56%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 50%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 22%;
-    --input: 217.2 32.6% 22%;
-    --ring: 199 89% 56%;
+    --background: 220 45% 6%;
+    --foreground: 210 35% 96%;
+    --card: 220 42% 9%;
+    --card-foreground: 210 35% 96%;
+    --popover: 220 42% 9%;
+    --popover-foreground: 210 35% 96%;
+    --primary: 215 90% 65%;            /* electric tech blue */
+    --primary-foreground: 220 50% 8%;
+    --secondary: 220 30% 16%;
+    --secondary-foreground: 210 35% 96%;
+    --muted: 220 28% 14%;
+    --muted-foreground: 215 18% 65%;
+    --accent: 42 85% 60%;
+    --accent-foreground: 220 50% 8%;
+    --destructive: 0 70% 55%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 220 28% 20%;
+    --input: 220 28% 20%;
+    --ring: 215 90% 65%;
+
+    --grid-line: 215 60% 35%;
+    --grid-glow: 42 85% 55%;
   }
 }
 
@@ -62,10 +72,85 @@
 @layer utilities {
   /* Hide native scrollbar but keep scrolling enabled. */
   .scrollbar-hide {
-    -ms-overflow-style: none; /* IE & Edge legacy */
-    scrollbar-width: none;     /* Firefox */
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
   .scrollbar-hide::-webkit-scrollbar {
-    display: none;             /* Chromium, Safari, Edge */
+    display: none;
+  }
+
+  /* === IT THEME — circuit / tech utilities === */
+
+  /* Subtle circuit grid background. Compose with bg-background. */
+  .bg-circuit {
+    background-image:
+      linear-gradient(to right, hsl(var(--grid-line) / 0.08) 1px, transparent 1px),
+      linear-gradient(to bottom, hsl(var(--grid-line) / 0.08) 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
+
+  /* Dotted tech grid (alternate). */
+  .bg-grid-dots {
+    background-image: radial-gradient(hsl(var(--grid-line) / 0.18) 1px, transparent 1px);
+    background-size: 18px 18px;
+  }
+
+  /* Soft radial spotlight using primary + accent (gold) — for hero areas. */
+  .bg-tech-glow {
+    background-image:
+      radial-gradient(circle at 18% 12%, hsl(var(--primary) / 0.18), transparent 55%),
+      radial-gradient(circle at 82% 88%, hsl(var(--accent) / 0.16), transparent 55%);
+  }
+
+  /* Animated scanline accent — used for active rows / hero divider. */
+  .tech-scan {
+    background: linear-gradient(
+      90deg,
+      transparent,
+      hsl(var(--primary) / 0.6),
+      hsl(var(--accent) / 0.6),
+      transparent
+    );
+    background-size: 200% 100%;
+    animation: tech-scan 4s linear infinite;
+  }
+  @keyframes tech-scan {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  /* Subtle gold glow ring around primary CTAs. */
+  .tech-glow {
+    box-shadow:
+      0 0 0 1px hsl(var(--primary) / 0.15),
+      0 8px 24px -10px hsl(var(--primary) / 0.45);
+  }
+
+  /* Tabular monospaced look for stats / leaderboards. */
+  .font-mono-tnum {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1, "ss01" 1;
+  }
+
+  /* === HOVER → WHITE TEXT (user-requested behavior) ===
+     Opt-in utility. Apply alongside a darkening hover background so the
+     white text stays readable. Used by buttons, nav links, menu items. */
+  .hover-white:hover,
+  .hover-white:hover * {
+    color: #ffffff !important;
+  }
+
+  /* Button-style hover: darkens to primary (navy) and turns text white.
+     Replaces the default outline/ghost grey-on-light hover. */
+  .btn-hover-tech {
+    transition: background-color .15s ease, color .15s ease, box-shadow .15s ease;
+  }
+  .btn-hover-tech:hover {
+    background-color: hsl(var(--primary)) !important;
+    color: #ffffff !important;
+    box-shadow: 0 6px 18px -8px hsl(var(--primary) / 0.55);
+  }
+  .btn-hover-tech:hover * {
+    color: #ffffff !important;
   }
 }

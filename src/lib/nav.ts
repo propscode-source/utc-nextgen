@@ -27,6 +27,12 @@ export type NavItem = {
    * Used to hide /labs from non-assistant mahasiswa.
    */
   gate?: "isLabAssistant";
+  /**
+   * Additional pathname prefixes that should also highlight this item.
+   * Useful when sub-features live under a different route but logically
+   * belong to this menu (mis. /admin/roles ⊂ "Pengguna").
+   */
+  activePrefixes?: string[];
 };
 
 export const NAV: NavItem[] = [
@@ -48,7 +54,13 @@ export const NAV: NavItem[] = [
   { label: "Sertifikat", href: "/certificates", icon: faCertificate, roles: ["MAHASISWA"] },
   { label: "Kelola Sertifikat", href: "/admin/certificates", icon: faCertificate, roles: ["LAB_ADMIN", "SUPERADMIN"] },
   { label: "Analytics", href: "/analytics", icon: faChartLine, roles: ["LAB_ADMIN", "SUPERADMIN"] },
-  { label: "Pengguna", href: "/admin/users", icon: faUsers, roles: ["SUPERADMIN"] },
+  {
+    label: "Pengguna",
+    href: "/admin/users",
+    icon: faUsers,
+    roles: ["SUPERADMIN"],
+    activePrefixes: ["/admin/roles", "/admin/policies", "/admin/permissions"],
+  },
   { label: "Notifikasi", href: "/notifications", icon: faBell, roles: ["MAHASISWA", "LAB_ADMIN", "PROCTOR", "SUPERADMIN"] },
 ];
 

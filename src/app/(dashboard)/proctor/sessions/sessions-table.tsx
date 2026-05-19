@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -97,7 +98,11 @@ export function SessionsTable({ scope }: { scope: "active" | "recent" }) {
           Riwayat
         </Link>
         <span className="ml-auto text-xs text-muted-foreground">
-          {loading ? "memuat…" : `${data.length} sesi`}
+          {loading && data.length === 0 ? (
+            <Skeleton className="h-3 w-14 inline-block align-middle" />
+          ) : (
+            `${data.length} sesi`
+          )}
         </span>
       </div>
 
@@ -115,6 +120,30 @@ export function SessionsTable({ scope }: { scope: "active" | "recent" }) {
               </TableRow>
             </TableHeader>
             <TableBody>
+              {loading && data.length === 0 &&
+                Array.from({ length: 4 }).map((_, i) => (
+                  <TableRow key={`sk-${i}`}>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <Skeleton className="h-8 w-8 rounded-full" />
+                        <div className="space-y-1.5">
+                          <Skeleton className="h-3 w-32" />
+                          <Skeleton className="h-2.5 w-40" />
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="space-y-1.5">
+                        <Skeleton className="h-3 w-28" />
+                        <Skeleton className="h-2.5 w-36" />
+                      </div>
+                    </TableCell>
+                    <TableCell><Skeleton className="h-5 w-16 rounded-full" /></TableCell>
+                    <TableCell className="text-right"><Skeleton className="h-3 w-14 ml-auto" /></TableCell>
+                    <TableCell className="text-right"><Skeleton className="h-5 w-12 rounded-full ml-auto" /></TableCell>
+                    <TableCell className="text-right"><Skeleton className="h-3 w-10 ml-auto" /></TableCell>
+                  </TableRow>
+                ))}
               {data.length === 0 && !loading && (
                 <TableRow>
                   <TableCell colSpan={6} className="py-12 text-center text-sm text-muted-foreground">

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -115,8 +116,22 @@ export function Topbar({ user, isLabAssistant = false }: Props) {
         <div className="fixed inset-0 z-40 md:hidden" role="dialog" aria-modal="true">
           <div className="absolute inset-0 bg-black/40" onClick={() => setOpen(false)} />
           <div className="absolute left-0 top-0 h-full w-72 bg-card border-r p-4 flex flex-col">
-            <div className="flex items-center justify-between mb-4">
-              <span className="font-bold">UTC NextGen</span>
+            <div className="flex items-center justify-between mb-4 gap-2">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <Image
+                  src="/logo-mark.png"
+                  alt="UTC NextGen"
+                  width={210}
+                  height={256}
+                  className="h-8 w-auto shrink-0"
+                />
+                <div className="min-w-0 leading-tight">
+                  <div className="text-sm font-bold tracking-tight truncate">UTC-NextGen</div>
+                  <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground truncate">
+                    Unsri Training Center
+                  </div>
+                </div>
+              </div>
               <Button variant="ghost" size="icon" aria-label="Tutup" onClick={() => setOpen(false)}>
                 <FontAwesomeIcon icon={faXmark} className="h-4 w-4" />
               </Button>
