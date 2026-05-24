@@ -27,13 +27,13 @@ export function PermissionCreateButton() {
   const [desc, setDesc] = useState("");
   const [busy, setBusy] = useState(false);
 
-  async function create() {
+  async function create(): Promise<void> {
     if (!/^[a-z][a-z0-9_]*(\.[a-z0-9_]+)+$/.test(key)) {
       toast.error("Format key: resource.action (huruf kecil, dot, underscore).");
       return;
     }
-    if (label.trim().length < 2) return toast.error("Label wajib.");
-    if (category.trim().length < 2) return toast.error("Kategori wajib.");
+    if (label.trim().length < 2) { toast.error("Label wajib."); return; }
+    if (category.trim().length < 2) { toast.error("Kategori wajib."); return; }
     setBusy(true);
     const res = await fetch("/api/admin/permissions", {
       method: "POST",

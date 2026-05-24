@@ -36,9 +36,9 @@ export function PolicyCreateButton() {
   const [desc, setDesc] = useState("");
   const [busy, setBusy] = useState(false);
 
-  async function create() {
-    if (name.trim().length < 2) return toast.error("Nama wajib.");
-    if (key.trim().length < 3) return toast.error("Key wajib (min. 3 karakter).");
+  async function create(): Promise<void> {
+    if (name.trim().length < 2) { toast.error("Nama wajib."); return; }
+    if (key.trim().length < 3) { toast.error("Key wajib (min. 3 karakter)."); return; }
     setBusy(true);
     const res = await fetch("/api/admin/policies", {
       method: "POST",

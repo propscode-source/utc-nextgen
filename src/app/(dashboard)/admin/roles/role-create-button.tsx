@@ -37,10 +37,10 @@ export function RoleCreateButton() {
   const [baseRole, setBaseRole] = useState<"SUPERADMIN" | "LAB_ADMIN" | "PROCTOR" | "MAHASISWA">("LAB_ADMIN");
   const [busy, setBusy] = useState(false);
 
-  async function create() {
-    if (name.trim().length < 2) return toast.error("Nama wajib (min. 2 karakter).");
-    if (key.trim().length < 3) return toast.error("Key wajib (min. 3 karakter).");
-    if (key.startsWith("system.")) return toast.error("Prefix 'system.' direservasi.");
+  async function create(): Promise<void> {
+    if (name.trim().length < 2) { toast.error("Nama wajib (min. 2 karakter.)"); return; }
+    if (key.trim().length < 3) { toast.error("Key wajib (min. 3 karakter)."); return; }
+    if (key.startsWith("system.")) { toast.error("Prefix 'system.' direservasi."); return; }
     setBusy(true);
     const res = await fetch("/api/admin/roles", {
       method: "POST",

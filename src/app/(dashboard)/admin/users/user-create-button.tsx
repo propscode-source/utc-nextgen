@@ -31,10 +31,19 @@ export function UserCreateButton({ customRoles }: { customRoles: CustomRoleOpt[]
     customRoleIds: [],
   };
 
-  async function create(v: UserFormValues) {
-    if (v.name.trim().length < 2) return toast.error("Nama minimal 2 karakter.");
-    if (!v.email.includes("@")) return toast.error("Email tidak valid.");
-    if ((v.password ?? "").length < 8) return toast.error("Password minimal 8 karakter.");
+  async function create(v: UserFormValues): Promise<void> {
+    if (v.name.trim().length < 2) {
+      toast.error("Nama minimal 2 karakter.");
+      return;
+    }
+    if (!v.email.includes("@")) {
+      toast.error("Email tidak valid.");
+      return;
+    }
+    if ((v.password ?? "").length < 8) {
+      toast.error("Password minimal 8 karakter.");
+      return;
+    }
 
     const res = await fetch("/api/admin/users", {
       method: "POST",
