@@ -27,7 +27,7 @@ export function Sidebar({ role, isLabAssistant = false }: { role: Role; isLabAss
             width={1980}
             height={780}
             priority
-            className="h-9 w-auto shrink-0"
+            className="h-9 w-auto shrink-0 logo-adaptive"
           />
         </Link>
       </div>

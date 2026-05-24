@@ -135,7 +135,7 @@ export function Topbar({ user, isLabAssistant = false }: Props) {
                 alt="UTC NextGen — Unsri Training Center"
                 width={1980}
                 height={780}
-                className="h-9 w-auto shrink-0"
+                className="h-9 w-auto shrink-0 logo-adaptive"
               />
               <Button variant="ghost" size="icon" aria-label="Tutup" onClick={() => setOpen(false)}>
                 <FontAwesomeIcon icon={faXmark} className="h-4 w-4" />

@@ -108,6 +108,15 @@
 }
 
 @layer utilities {
+  /* Logo dark-mode adaptation:
+     invert(1) flips dark navy → light, hue-rotate(180deg) recovers warm gold tones. */
+  .logo-adaptive {
+    transition: filter 0.25s ease;
+  }
+  .dark .logo-adaptive {
+    filter: invert(1) hue-rotate(180deg) brightness(1.05);
+  }
+
   /* Hide native scrollbar but keep scrolling enabled. */
   .scrollbar-hide {
     -ms-overflow-style: none;
