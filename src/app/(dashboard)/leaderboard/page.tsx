@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatPoints } from "@/lib/utils";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCrown, faMedal, faTrophy, faCoins } from "@fortawesome/free-solid-svg-icons";
+import { LeaderboardList } from "./leaderboard-list";
 
 export const metadata: Metadata = { title: "Leaderboard" };
 
@@ -108,58 +109,7 @@ export default async function LeaderboardPage({
         </div>
       )}
 
-      {/* Full table */}
-      <Card>
-        <CardContent className="p-0">
-          {rows.length === 0 ? (
-            <div className="py-10 text-center text-sm text-muted-foreground">
-              Belum ada aktivitas pada periode ini.
-            </div>
-          ) : (
-            <ul className="divide-y">
-              {rows.map((r, idx) => {
-                const me = r.userId === session.user.id;
-                const initials = r.name.split(" ").map((p) => p[0]).join("").slice(0, 2).toUpperCase();
-                return (
-                  <li
-                    key={r.userId}
-                    className={`flex items-center gap-3 px-5 py-3 ${me ? "bg-primary/5" : ""}`}
-                  >
-                    <span
-                      className={`grid h-8 w-8 place-items-center rounded-full text-sm font-bold tabular-nums ${
-                        idx === 0
-                          ? "bg-amber-500 text-white"
-                          : idx === 1
-                            ? "bg-zinc-400 text-white"
-                            : idx === 2
-                              ? "bg-orange-500 text-white"
-                              : "bg-muted"
-                      }`}
-                    >
-                      {idx + 1}
-                    </span>
-                    <Avatar className="h-9 w-9">
-                      {r.image && <AvatarImage src={r.image} alt={r.name} />}
-                      <AvatarFallback>{initials}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium truncate flex items-center gap-2">
-                        {r.name}
-                        {me && <Badge variant="info" className="text-[10px]">Kamu</Badge>}
-                      </div>
-                      {r.prodi && <div className="text-xs text-muted-foreground truncate">{r.prodi}</div>}
-                    </div>
-                    <div className="font-bold tabular-nums inline-flex items-center gap-1 text-amber-500">
-                      <FontAwesomeIcon icon={faCoins} className="h-3 w-3" />
-                      {formatPoints(r.points)}
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </CardContent>
-      </Card>
+      <LeaderboardList rows={rows} currentUserId={session.user.id} />
     </div>
   );
 }

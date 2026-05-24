@@ -87,6 +87,12 @@ export const PERMISSION_CATALOG: PermissionDef[] = [
   { key: "analytics.view", category: "Analytics", label: "Akses analytics", description: "Lihat dashboard analytics." },
   { key: "analytics.export", category: "Analytics", label: "Export CSV analytics", description: "Mengunduh laporan analytics." },
   { key: "analytics.ai", category: "Analytics", label: "Analisa AI", description: "Memanggil Gemini untuk insight AI." },
+
+  // ---- Event / Campaign ----
+  { key: "event.view", category: "Event", label: "Lihat event", description: "Akses daftar event/kampanye." },
+  { key: "event.manage", category: "Event", label: "Kelola event (CRUD)", description: "Buat, edit, hapus event/kampanye." },
+  { key: "event.attendance.manage", category: "Event", label: "Kelola presensi event", description: "Tandai kehadiran peserta dan finalisasi pemberian poin." },
+  { key: "event.attend", category: "Event", label: "Isi presensi event", description: "Peserta mengisi presensi pada event yang sedang berlangsung." },
 ];
 
 export type PolicyDef = {
@@ -135,6 +141,9 @@ export const POLICY_CATALOG: PolicyDef[] = [
       "analytics.export",
       "analytics.ai",
       "user.view",
+      "event.view",
+      "event.manage",
+      "event.attendance.manage",
     ],
   },
   {
@@ -164,6 +173,8 @@ export const POLICY_CATALOG: PolicyDef[] = [
       "merch.view",
       "merch.redeem",
       "badge.view",
+      "event.view",
+      "event.attend",
     ],
   },
   {

@@ -5,12 +5,11 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFileExport, faArrowLeft } from "@fortawesome/free-solid-svg-icons";
 import { allowedLabIdsFor } from "@/lib/analytics";
 import { BarChart } from "@/components/charts";
+import { PerCourseTable, type PerCourseRow } from "./per-course-table";
 
 export const metadata: Metadata = { title: "Laporan per Pelatihan" };
 
@@ -76,12 +75,15 @@ export default async function PerCourseReportPage({ searchParams }: { searchPara
     if (cur) cur.passed = s._count._all;
   }
 
-  const rows = courses.map((c) => {
+  const rows: PerCourseRow[] = courses.map((c) => {
     const stats = c.finalQuiz ? byQuiz.get(c.finalQuiz.id) : undefined;
     const completionRate =
       c._count.enrollments > 0 ? Math.round((c._count.certificates / c._count.enrollments) * 100) : 0;
     return {
-      ...c,
+      id: c.id,
+      title: c.title,
+      passScore: c.passScore,
+      lab: { name: c.lab.name },
       enrollments: c._count.enrollments,
       certificates: c._count.certificates,
       completionRate,
@@ -162,54 +164,7 @@ export default async function PerCourseReportPage({ searchParams }: { searchPara
         </div>
       )}
 
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Course / Lab</TableHead>
-                <TableHead className="text-right">Pass Score</TableHead>
-                <TableHead className="text-right">Enrolled</TableHead>
-                <TableHead className="text-right">Sertifikat</TableHead>
-                <TableHead className="text-right">Kelulusan</TableHead>
-                <TableHead className="text-right">Final Attempt</TableHead>
-                <TableHead className="text-right">Final Lulus</TableHead>
-                <TableHead className="text-right">Avg Skor</TableHead>
-                <TableHead className="text-right">Pelanggaran</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={9} className="py-8 text-center text-sm text-muted-foreground">
-                    Tidak ada course.
-                  </TableCell>
-                </TableRow>
-              )}
-              {rows.map((r) => (
-                <TableRow key={r.id}>
-                  <TableCell>
-                    <div className="text-sm font-medium">{r.title}</div>
-                    <div className="text-[10px] text-muted-foreground">{r.lab.name}</div>
-                  </TableCell>
-                  <TableCell className="text-right text-xs">{r.passScore}%</TableCell>
-                  <TableCell className="text-right">{r.enrollments}</TableCell>
-                  <TableCell className="text-right">{r.certificates}</TableCell>
-                  <TableCell className="text-right">
-                    <Badge variant={r.completionRate >= 70 ? "success" : "outline"} className="text-[10px]">
-                      {r.completionRate}%
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right text-xs">{r.examAttempts}</TableCell>
-                  <TableCell className="text-right text-xs">{r.examPassed}</TableCell>
-                  <TableCell className="text-right text-xs">{r.avgScore ?? "—"}</TableCell>
-                  <TableCell className="text-right text-xs">{r.violations}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      <PerCourseTable rows={rows} />
     </div>
   );
 }

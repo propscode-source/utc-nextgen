@@ -1,6 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
+import { faChartPie } from "@fortawesome/free-solid-svg-icons";
 import { cn } from "@/lib/utils";
 
 export type Accent = "primary" | "gold" | "sky" | "emerald" | "violet" | "rose" | "amber";
@@ -29,16 +30,18 @@ export function StatCard({
   accent?: Accent;
 }) {
   return (
-    <Card className="overflow-hidden">
+    <Card className="group relative overflow-hidden border-primary/10 transition-all hover:border-primary/40 hover:shadow-lg hover:shadow-primary/10 hover:-translate-y-0.5">
+      {/* Subtle gold accent strip on hover (IT theme) */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent/60 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
       <CardContent className="flex items-center gap-4 p-5">
-        <div className={cn("grid h-11 w-11 shrink-0 place-items-center rounded-lg", tints[accent])}>
+        <div className={cn("grid h-11 w-11 shrink-0 place-items-center rounded-lg ring-1 ring-inset ring-primary/10", tints[accent])}>
           <FontAwesomeIcon icon={icon} className="h-5 w-5" />
         </div>
         <div className="min-w-0">
           <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground truncate">
             {label}
           </div>
-          <div className="text-2xl font-bold leading-tight tabular-nums">{value}</div>
+          <div className="text-2xl font-bold leading-tight font-mono-tnum">{value}</div>
           {hint ? <div className="text-[11px] text-muted-foreground mt-0.5 truncate">{hint}</div> : null}
         </div>
       </CardContent>
@@ -96,9 +99,20 @@ export function EmptyState({ icon, message }: { icon?: IconDefinition; message: 
 
 export function Greeting({ name, subtitle }: { name: string; subtitle: string }) {
   return (
-    <div>
-      <h1 className="text-2xl font-bold tracking-tight">Halo, {name.split(" ")[0]}!</h1>
-      <p className="text-muted-foreground text-sm mt-1">{subtitle}</p>
+    <div className="relative overflow-hidden rounded-xl border border-primary/15 bg-gradient-to-br from-primary/[.06] via-background to-accent/[.05] p-5">
+      <div className="pointer-events-none absolute inset-0 bg-grid-dots opacity-50" />
+      <div className="pointer-events-none absolute -top-12 -right-12 h-40 w-40 rounded-full bg-accent/10 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-12 -left-12 h-40 w-40 rounded-full bg-primary/10 blur-3xl" />
+      <div className="relative">
+        <div className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/5 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
+          <FontAwesomeIcon icon={faChartPie} className="h-2.5 w-2.5" />
+          Dashboard
+        </div>
+        <h1 className="mt-2 text-2xl font-bold tracking-tight">
+          Halo, <span className="text-primary">{name.split(" ")[0]}</span>!
+        </h1>
+        <p className="text-muted-foreground text-sm mt-1">{subtitle}</p>
+      </div>
     </div>
   );
 }

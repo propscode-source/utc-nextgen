@@ -6,17 +6,15 @@ import { prisma } from "@/lib/prisma";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFileExport, faArrowLeft } from "@fortawesome/free-solid-svg-icons";
-import { formatDate } from "@/lib/utils";
 import { allowedLabIdsFor } from "@/lib/analytics";
 import { LineChart, BarChart } from "@/components/charts";
+import { CertifiedTable, type CertRow } from "./certified-table";
 
 export const metadata: Metadata = { title: "Laporan Mahasiswa Bersertifikasi" };
 
-type SP = { lab?: string; course?: string; from?: string; to?: string; q?: string };
+type SP = { lab?: string; course?: string; from?: string; to?: string };
 
 export default async function CertifiedReportPage({ searchParams }: { searchParams: Promise<SP> }) {
   const session = await auth();
@@ -54,14 +52,6 @@ export default async function CertifiedReportPage({ searchParams }: { searchPara
           },
         }
       : {}),
-    ...(sp.q && {
-      OR: [
-        { certNumber: { contains: sp.q, mode: "insensitive" as const } },
-        { user: { name: { contains: sp.q, mode: "insensitive" as const } } },
-        { user: { email: { contains: sp.q, mode: "insensitive" as const } } },
-        { user: { nim: { contains: sp.q } } },
-      ],
-    }),
   };
 
   const certs = await prisma.certificate.findMany({
@@ -98,6 +88,14 @@ export default async function CertifiedReportPage({ searchParams }: { searchPara
     .map(([label, value]) => ({ label, value }))
     .sort((a, b) => b.value - a.value)
     .slice(0, 8);
+
+  const certRows: CertRow[] = certs.map((c) => ({
+    id: c.id,
+    certNumber: c.certNumber,
+    issuedAt: c.issuedAt,
+    user: c.user,
+    course: c.course,
+  }));
 
   return (
     <div className="space-y-6">
@@ -145,10 +143,7 @@ export default async function CertifiedReportPage({ searchParams }: { searchPara
         </select>
         <Input type="date" name="from" defaultValue={sp.from ?? ""} placeholder="Dari" />
         <Input type="date" name="to" defaultValue={sp.to ?? ""} placeholder="Sampai" />
-        <div className="flex gap-2">
-          <Input name="q" defaultValue={sp.q ?? ""} placeholder="Cari nama/NIM/nomor" />
-          <Button type="submit" size="sm">Filter</Button>
-        </div>
+        <Button type="submit" size="sm" className="w-full">Filter server</Button>
       </form>
 
       {certs.length > 0 && (
@@ -164,56 +159,7 @@ export default async function CertifiedReportPage({ searchParams }: { searchPara
         </div>
       )}
 
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nomor Sertifikat</TableHead>
-                <TableHead>Mahasiswa</TableHead>
-                <TableHead>NIM / Prodi</TableHead>
-                <TableHead>Course / Lab</TableHead>
-                <TableHead>Diterbitkan</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {certs.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={5} className="py-8 text-center text-sm text-muted-foreground">
-                    Tidak ada sertifikat sesuai filter.
-                  </TableCell>
-                </TableRow>
-              )}
-              {certs.map((c) => (
-                <TableRow key={c.id}>
-                  <TableCell>
-                    <code className="font-mono text-xs font-bold">{c.certNumber}</code>
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-sm font-medium">{c.user.name}</div>
-                    <div className="text-[10px] text-muted-foreground">{c.user.email}</div>
-                  </TableCell>
-                  <TableCell className="text-xs">
-                    <div>{c.user.nim ?? "—"}</div>
-                    <div className="text-muted-foreground">
-                      {c.user.prodi ?? "—"} {c.user.angkatan ? `· ${c.user.angkatan}` : ""}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-sm">{c.course.title}</div>
-                    <div className="text-[10px] text-muted-foreground">{c.course.lab.name}</div>
-                  </TableCell>
-                  <TableCell className="text-xs">
-                    <Badge variant="outline" className="text-[10px]">
-                      {formatDate(c.issuedAt)}
-                    </Badge>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      <CertifiedTable certs={certRows} />
     </div>
   );
 }

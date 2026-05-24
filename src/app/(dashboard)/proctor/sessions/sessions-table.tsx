@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
+import { SearchInput } from "@/components/ui/search-input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -52,6 +53,17 @@ export function SessionsTable({ scope }: { scope: "active" | "recent" }) {
   const [data, setData] = useState<S[]>([]);
   const [now, setNow] = useState(Date.now());
   const [loading, setLoading] = useState(true);
+  const [query, setQuery] = useState("");
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return data;
+    return data.filter((s) =>
+      `${s.user.name} ${s.user.email} ${s.user.nim ?? ""} ${s.quiz.title} ${s.quiz.kind} ${s.quiz.course?.title ?? ""}`
+        .toLowerCase()
+        .includes(q)
+    );
+  }, [data, query]);
 
   useEffect(() => {
     let stop = false;
@@ -78,32 +90,40 @@ export function SessionsTable({ scope }: { scope: "active" | "recent" }) {
 
   return (
     <>
-      <div className="flex items-center gap-2">
-        <Link
-          href="/proctor/sessions"
-          className={cn(
-            "inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium",
-            scope === "active" ? "bg-primary text-primary-foreground border-primary" : "hover:bg-accent"
-          )}
-        >
-          Aktif
-        </Link>
-        <Link
-          href="/proctor/sessions?scope=recent"
-          className={cn(
-            "inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium",
-            scope === "recent" ? "bg-primary text-primary-foreground border-primary" : "hover:bg-accent"
-          )}
-        >
-          Riwayat
-        </Link>
-        <span className="ml-auto text-xs text-muted-foreground">
-          {loading && data.length === 0 ? (
-            <Skeleton className="h-3 w-14 inline-block align-middle" />
-          ) : (
-            `${data.length} sesi`
-          )}
-        </span>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+        <div className="flex items-center gap-2 flex-wrap">
+          <Link
+            href="/proctor/sessions"
+            className={cn(
+              "inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium",
+              scope === "active" ? "bg-primary text-primary-foreground border-primary" : "hover:bg-accent"
+            )}
+          >
+            Aktif
+          </Link>
+          <Link
+            href="/proctor/sessions?scope=recent"
+            className={cn(
+              "inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium",
+              scope === "recent" ? "bg-primary text-primary-foreground border-primary" : "hover:bg-accent"
+            )}
+          >
+            Riwayat
+          </Link>
+          <span className="text-xs text-muted-foreground">
+            {loading && data.length === 0 ? (
+              <Skeleton className="h-3 w-14 inline-block align-middle" />
+            ) : (
+              `${filtered.length} / ${data.length} sesi`
+            )}
+          </span>
+        </div>
+        <SearchInput
+          value={query}
+          onChange={setQuery}
+          placeholder="Cari mahasiswa, ujian, atau course..."
+          containerClassName="w-full sm:ml-auto sm:w-64 md:w-80"
+        />
       </div>
 
       <Card>
@@ -144,15 +164,21 @@ export function SessionsTable({ scope }: { scope: "active" | "recent" }) {
                     <TableCell className="text-right"><Skeleton className="h-3 w-10 ml-auto" /></TableCell>
                   </TableRow>
                 ))}
-              {data.length === 0 && !loading && (
+              {filtered.length === 0 && !loading && (
                 <TableRow>
                   <TableCell colSpan={6} className="py-12 text-center text-sm text-muted-foreground">
                     <FontAwesomeIcon icon={faShieldHalved} className="h-8 w-8 mb-2 text-muted-foreground" />
-                    <div>{scope === "active" ? "Tidak ada sesi aktif." : "Belum ada riwayat."}</div>
+                    <div>
+                      {query
+                        ? `Tidak ada sesi yang cocok dengan "${query}".`
+                        : scope === "active"
+                          ? "Tidak ada sesi aktif."
+                          : "Belum ada riwayat."}
+                    </div>
                   </TableCell>
                 </TableRow>
               )}
-              {data.map((s) => {
+              {filtered.map((s) => {
                 const initials = s.user.name.split(" ").map((p) => p[0]).join("").slice(0, 2).toUpperCase();
                 const remainingMs = s.endsAt && s.status === "ACTIVE" ? new Date(s.endsAt).getTime() - now : 0;
                 const violationDanger = s.violationCount >= s.maxViolations - 1;

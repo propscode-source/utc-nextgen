@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { loginSchema, type LoginInput } from "@/lib/zod-schemas";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faRightToBracket, faSpinner } from "@fortawesome/free-solid-svg-icons";
+import { faRightToBracket, faSpinner, faEnvelope, faLock } from "@fortawesome/free-solid-svg-icons";
 
 export function LoginForm({
   searchParamsPromise,
@@ -49,17 +49,38 @@ export function LoginForm({
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div className="space-y-1.5">
-        <Label htmlFor="email">Email</Label>
-        <Input id="email" type="email" autoComplete="email" {...register("email")} />
+        <Label htmlFor="email" className="flex items-center gap-1.5">
+          <FontAwesomeIcon icon={faEnvelope} className="h-3 w-3 text-primary" />
+          Email
+        </Label>
+        <Input
+          id="email"
+          type="email"
+          autoComplete="email"
+          placeholder="nama@unsri.ac.id"
+          {...register("email")}
+        />
         {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
       </div>
       <div className="space-y-1.5">
-        <Label htmlFor="password">Password</Label>
-        <Input id="password" type="password" autoComplete="current-password" {...register("password")} />
+        <Label htmlFor="password" className="flex items-center gap-1.5">
+          <FontAwesomeIcon icon={faLock} className="h-3 w-3 text-primary" />
+          Password
+        </Label>
+        <Input
+          id="password"
+          type="password"
+          autoComplete="current-password"
+          placeholder="••••••••"
+          {...register("password")}
+        />
         {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
       </div>
-      <Button type="submit" className="w-full" disabled={submitting}>
-        <FontAwesomeIcon icon={submitting ? faSpinner : faRightToBracket} className={submitting ? "animate-spin" : ""} />
+      <Button type="submit" className="w-full tech-glow" disabled={submitting}>
+        <FontAwesomeIcon
+          icon={submitting ? faSpinner : faRightToBracket}
+          className={submitting ? "animate-spin" : ""}
+        />
         {submitting ? "Memproses…" : "Masuk"}
       </Button>
     </form>

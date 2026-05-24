@@ -6,13 +6,11 @@ import { prisma } from "@/lib/prisma";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFileExport, faArrowLeft, faSliders } from "@fortawesome/free-solid-svg-icons";
-import { formatDate } from "@/lib/utils";
 import { allowedLabIdsFor } from "@/lib/analytics";
 import { runCustomReport, type CustomDataset } from "./run";
+import { CustomReportTable } from "./custom-report-table";
 
 export const metadata: Metadata = { title: "Custom Report" };
 
@@ -160,41 +158,7 @@ export default async function CustomReportPage({ searchParams }: { searchParams:
         </CardContent>
       </Card>
 
-      <Card>
-        <CardContent className="p-0 overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                {result.headers.map((h) => (
-                  <TableHead key={h}>{h}</TableHead>
-                ))}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {result.rows.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={result.headers.length} className="py-8 text-center text-sm text-muted-foreground">
-                    Tidak ada baris sesuai parameter.
-                  </TableCell>
-                </TableRow>
-              )}
-              {result.rows.map((row, i) => (
-                <TableRow key={i}>
-                  {row.map((cell, j) => (
-                    <TableCell key={j} className="text-xs">
-                      {cell instanceof Date ? (
-                        <Badge variant="outline" className="text-[10px]">{formatDate(cell)}</Badge>
-                      ) : (
-                        String(cell ?? "—")
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      <CustomReportTable headers={result.headers} rows={result.rows} />
     </div>
   );
 }

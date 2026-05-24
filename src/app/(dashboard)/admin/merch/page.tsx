@@ -3,11 +3,9 @@ import type { Metadata } from "next";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { MerchCreateButton } from "./merch-create-button";
-import { MerchRowActions } from "./merch-row-actions";
-import { formatDate, formatPoints } from "@/lib/utils";
+import { MerchTable, type MerchTableItem } from "./merch-table";
+import { formatPoints } from "@/lib/utils";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faGift, faCoins } from "@fortawesome/free-solid-svg-icons";
 
@@ -30,6 +28,20 @@ export default async function ManageMerchPage() {
     (s, i) => s + (i.stock > 0 ? i.stock * i.pointPrice : 0),
     0
   );
+
+  const tableItems: MerchTableItem[] = items.map((item) => ({
+    id: item.id,
+    name: item.name,
+    slug: item.slug,
+    description: item.description,
+    imageUrl: item.imageUrl,
+    kind: item.kind,
+    pointPrice: item.pointPrice,
+    stock: item.stock,
+    active: item.active,
+    createdAt: item.createdAt,
+    redemptionCount: item._count.redemptions,
+  }));
 
   return (
     <div className="space-y-6">
@@ -76,89 +88,7 @@ export default async function ManageMerchPage() {
         </Card>
       </div>
 
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Item</TableHead>
-                <TableHead>Tipe</TableHead>
-                <TableHead className="text-right">Harga</TableHead>
-                <TableHead className="text-right">Stok</TableHead>
-                <TableHead className="text-right">Penukaran</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Dibuat</TableHead>
-                <TableHead className="text-right">Aksi</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {items.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={8} className="text-center text-sm text-muted-foreground py-8">
-                    Belum ada merchandise.
-                  </TableCell>
-                </TableRow>
-              )}
-              {items.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell>
-                    <div className="font-medium">{item.name}</div>
-                    {item.description && (
-                      <div className="text-xs text-muted-foreground line-clamp-1">{item.description}</div>
-                    )}
-                    <div className="text-[10px] font-mono text-muted-foreground mt-1">{item.slug}</div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={item.kind === "VOUCHER" ? "info" : "secondary"} className="text-[10px]">
-                      {item.kind === "VOUCHER" ? "Voucher" : "Fisik"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    <span className="text-amber-500 font-semibold">
-                      {formatPoints(item.pointPrice)}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {item.stock < 0 ? (
-                      <Badge variant="outline" className="text-[10px]">∞</Badge>
-                    ) : item.stock === 0 ? (
-                      <Badge variant="destructive" className="text-[10px]">Habis</Badge>
-                    ) : (
-                      item.stock
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums">{item._count.redemptions}</TableCell>
-                  <TableCell>
-                    {item.active ? (
-                      <Badge variant="success">Aktif</Badge>
-                    ) : (
-                      <Badge variant="outline">Non-aktif</Badge>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-xs text-muted-foreground">
-                    {formatDate(item.createdAt)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <MerchRowActions
-                      item={{
-                        id: item.id,
-                        name: item.name,
-                        description: item.description ?? "",
-                        imageUrl: item.imageUrl ?? "",
-                        pointPrice: item.pointPrice,
-                        stock: item.stock,
-                        active: item.active,
-                        kind: item.kind,
-                        hasRedemptions: item._count.redemptions > 0,
-                      }}
-                    />
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      <MerchTable items={tableItems} />
     </div>
   );
 }

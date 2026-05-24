@@ -10,6 +10,7 @@ import {
   AssetCondition,
   MerchKind,
   LabMemberRole,
+  EventStatus,
 } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import {
@@ -578,6 +579,70 @@ async function main() {
     }
   }
   console.log(`  ${PERMISSION_CATALOG.length} permission, ${POLICY_CATALOG.length} policy, ${SYSTEM_ROLE_CATALOG.length} system role.`);
+
+  // ---------- EVENT / CAMPAIGN (Phase 10) ----------
+  const day = 1000 * 60 * 60 * 24;
+  const eventDefs = [
+    {
+      slug: "workshop-nextjs-2026",
+      title: "Workshop Next.js + Prisma 2026",
+      description: "Bangun aplikasi fullstack modern bersama Lab SI. Praktik langsung, dapatkan poin saat hadir.",
+      location: "Aula Fasilkom Lt. 3",
+      startsAt: new Date(now.getTime() + 3 * day),
+      endsAt: new Date(now.getTime() + 3 * day + 4 * 60 * 60 * 1000),
+      pointReward: 75,
+      status: EventStatus.PUBLISHED,
+      labId: labSI.id,
+      attendanceCode: "NEXTJS26",
+    },
+    {
+      slug: "ctf-night-keamanan-2026",
+      title: "CTF Night: Capture The Flag 2026",
+      description: "Kompetisi keamanan siber semalam suntuk. Hadiah poin besar untuk peserta yang hadir.",
+      location: "Lab Jaringan & Keamanan",
+      startsAt: new Date(now.getTime() + 7 * day),
+      endsAt: new Date(now.getTime() + 7 * day + 8 * 60 * 60 * 1000),
+      pointReward: 150,
+      status: EventStatus.PUBLISHED,
+      labId: labJK.id,
+      attendanceCode: "CTF2026",
+    },
+    {
+      slug: "seminar-ai-fasilkom",
+      title: "Seminar Generative AI di Fasilkom",
+      description: "Diskusi pemanfaatan AI generatif untuk riset dan industri. Terbuka untuk semua angkatan.",
+      location: "Auditorium Pascasarjana",
+      startsAt: new Date(now.getTime() - 1 * day),
+      endsAt: new Date(now.getTime() - 1 * day + 3 * 60 * 60 * 1000),
+      pointReward: 50,
+      status: EventStatus.COMPLETED,
+      labId: null,
+      attendanceCode: null,
+      finalizedAt: new Date(now.getTime() - 12 * 60 * 60 * 1000),
+    },
+  ];
+
+  for (const e of eventDefs) {
+    await prisma.event.upsert({
+      where: { slug: e.slug },
+      update: {},
+      create: {
+        slug: e.slug,
+        title: e.title,
+        description: e.description,
+        location: e.location,
+        startsAt: e.startsAt,
+        endsAt: e.endsAt,
+        pointReward: e.pointReward,
+        status: e.status,
+        labId: e.labId ?? undefined,
+        attendanceCode: e.attendanceCode,
+        finalizedAt: (e as { finalizedAt?: Date }).finalizedAt,
+        createdById: superadmin.id,
+        isPublic: true,
+      },
+    });
+  }
 
   console.log("Seed selesai.");
   console.log("Akun login default (password: password123):");

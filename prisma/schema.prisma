@@ -2,12 +2,14 @@
 // Schema covers all 9 modules. Migrations are added per-module as they're built.
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 // =====================================================================
@@ -73,6 +75,15 @@ enum PointEvent {
   COURSE_UNLOCK
   MERCH_REDEEM
   ADMIN_ADJUST
+  EVENT_ATTENDANCE
+}
+
+enum EventStatus {
+  DRAFT // belum dipublikasikan
+  PUBLISHED // tampil di landing & dashboard, belum dimulai
+  ONGOING // event sedang berlangsung
+  COMPLETED // event sudah selesai & poin sudah diberikan
+  CANCELLED // dibatalkan
 }
 
 enum ProjectStatus {
@@ -154,20 +165,22 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  accounts      Account[]
-  sessions      Session[]
-  pointsLedger  PointsLedger[]
-  enrollments   Enrollment[]
-  quizAttempts  QuizAttempt[]
-  examSessions  ExamSession[]
-  certificates  Certificate[]
-  userBadges    UserBadge[]
-  notifications Notification[]
-  labMemberships LabMember[]
-  adminOfLabs   Lab[]          @relation("LabAdmin")
-  lessonProgress LessonProgress[]
-  redemptions    MerchRedemption[]
-  customRoles    UserCustomRole[]
+  accounts         Account[]
+  sessions         Session[]
+  pointsLedger     PointsLedger[]
+  enrollments      Enrollment[]
+  quizAttempts     QuizAttempt[]
+  examSessions     ExamSession[]
+  certificates     Certificate[]
+  userBadges       UserBadge[]
+  notifications    Notification[]
+  labMemberships   LabMember[]
+  adminOfLabs      Lab[]             @relation("LabAdmin")
+  lessonProgress   LessonProgress[]
+  redemptions      MerchRedemption[]
+  customRoles      UserCustomRole[]
+  eventAttendances EventAttendance[]
+  createdEvents    Event[]           @relation("EventCreator")
 
   @@index([role])
 }
@@ -221,13 +234,14 @@ model Lab {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  admin    User?       @relation("LabAdmin", fields: [adminId], references: [id])
-  members  LabMember[]
-  courses  Course[]
-  tors     Tor[]
-  projects Project[]
-  assets   Asset[]
+  admin                User?                 @relation("LabAdmin", fields: [adminId], references: [id])
+  members              LabMember[]
+  courses              Course[]
+  tors                 Tor[]
+  projects             Project[]
+  assets               Asset[]
   certificateTemplates CertificateTemplate[]
+  events               Event[]
 }
 
 model LabMember {
@@ -308,30 +322,30 @@ model Asset {
 // =====================================================================
 
 model Course {
-  id             String   @id @default(cuid())
-  slug           String   @unique
-  labId          String
-  title          String
-  description    String?  @db.Text
-  thumbnailUrl   String?
-  isLocked       Boolean  @default(false)
-  pointPrice     Int      @default(0)
-  requirePretest Boolean  @default(false)
-  passScore      Int      @default(70) // % for final exam
+  id                String   @id @default(cuid())
+  slug              String   @unique
+  labId             String
+  title             String
+  description       String?  @db.Text
+  thumbnailUrl      String?
+  isLocked          Boolean  @default(false)
+  pointPrice        Int      @default(0)
+  requirePretest    Boolean  @default(false)
+  passScore         Int      @default(70) // % for final exam
   // Cert numbering. Pattern tokens: {PREFIX} {YEAR} {MONTH} {SEQ} {SEQ4}.
   // Default pattern when null: "{PREFIX}/{YEAR}/{SEQ4}". Default prefix when null: "UTC".
   // Lets fakultas define formats like "FASILKOM-PEL/2025/0001" by setting prefix=FASILKOM-PEL.
   certNumberPrefix  String?
   certNumberPattern String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
-  lab          Lab          @relation(fields: [labId], references: [id], onDelete: Cascade)
-  sections     Section[]
-  enrollments  Enrollment[]
-  pretestQuiz  Quiz?        @relation("CoursePretest")
-  finalQuiz    Quiz?        @relation("CourseFinal")
-  certificates Certificate[]
+  lab                 Lab                  @relation(fields: [labId], references: [id], onDelete: Cascade)
+  sections            Section[]
+  enrollments         Enrollment[]
+  pretestQuiz         Quiz?                @relation("CoursePretest")
+  finalQuiz           Quiz?                @relation("CourseFinal")
+  certificates        Certificate[]
   certificateTemplate CertificateTemplate?
 }
 
@@ -342,9 +356,9 @@ model Section {
   order     Int
   createdAt DateTime @default(now())
 
-  course   Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  lessons  Lesson[]
-  quiz     Quiz?    @relation("SectionQuiz")
+  course  Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessons Lesson[]
+  quiz    Quiz?    @relation("SectionQuiz")
 
   @@unique([courseId, order])
 }
@@ -355,8 +369,8 @@ model Lesson {
   title       String
   order       Int
   type        LessonType
-  contentText String?    @db.Text   // legacy / fallback plain text
-  contentJson Json?                  // rich content (Tiptap doc) for TEXT lessons
+  contentText String?    @db.Text // legacy / fallback plain text
+  contentJson Json? // rich content (Tiptap doc) for TEXT lessons
   contentUrl  String?
   durationSec Int?
   createdAt   DateTime   @default(now())
@@ -389,7 +403,7 @@ model Quiz {
   title             String
   minScore          Int      @default(70)
   maxAttempts       Int      @default(3)
-  timerSec          Int?     // null = no timer
+  timerSec          Int? // null = no timer
   cooldownMinutes   Int?     @default(30) // null = no cooldown (hard limit). Otherwise rolling window.
   randomize         Boolean  @default(true)
   // Anti-cheat config (used by PRETEST/FINAL via ExamSession; SECTION quizzes ignore these).
@@ -399,9 +413,9 @@ model Quiz {
   createdAt         DateTime @default(now())
 
   // exactly one of these is set per quiz, depending on kind
-  sectionId        String? @unique
-  pretestCourseId  String? @unique
-  finalCourseId    String? @unique
+  sectionId       String? @unique
+  pretestCourseId String? @unique
+  finalCourseId   String? @unique
 
   section       Section?      @relation("SectionQuiz", fields: [sectionId], references: [id], onDelete: Cascade)
   pretestCourse Course?       @relation("CoursePretest", fields: [pretestCourseId], references: [id], onDelete: Cascade)
@@ -412,14 +426,14 @@ model Quiz {
 }
 
 model Question {
-  id      String       @id @default(cuid())
-  quizId  String
-  type    QuestionType
-  order   Int
-  text    String       @db.Text
-  points  Int          @default(1)
+  id     String       @id @default(cuid())
+  quizId String
+  type   QuestionType
+  order  Int
+  text   String       @db.Text
+  points Int          @default(1)
 
-  quiz    Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  quiz    Quiz               @relation(fields: [quizId], references: [id], onDelete: Cascade)
   choices Choice[]
   answers AnswerSubmission[]
 
@@ -433,7 +447,7 @@ model Choice {
   isCorrect  Boolean @default(false)
   order      Int
 
-  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  question Question           @relation(fields: [questionId], references: [id], onDelete: Cascade)
   picks    AnswerSubmission[]
 }
 
@@ -455,15 +469,15 @@ model QuizAttempt {
 }
 
 model AnswerSubmission {
-  id         String  @id @default(cuid())
-  attemptId  String
-  questionId String
-  choiceId   String?
-  essayText  String? @db.Text
-  isCorrect  Boolean?
-  pointsAwarded Int  @default(0)
-  gradedById String?
-  gradedAt   DateTime?
+  id            String    @id @default(cuid())
+  attemptId     String
+  questionId    String
+  choiceId      String?
+  essayText     String?   @db.Text
+  isCorrect     Boolean?
+  pointsAwarded Int       @default(0)
+  gradedById    String?
+  gradedAt      DateTime?
 
   attempt  QuizAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
   question Question    @relation(fields: [questionId], references: [id], onDelete: Cascade)
@@ -477,12 +491,12 @@ model AnswerSubmission {
 // =====================================================================
 
 model Enrollment {
-  id         String   @id @default(cuid())
-  userId     String
-  courseId   String
-  enrolledAt DateTime @default(now())
+  id          String    @id @default(cuid())
+  userId      String
+  courseId    String
+  enrolledAt  DateTime  @default(now())
   completedAt DateTime?
-  progressPct Int      @default(0)
+  progressPct Int       @default(0)
 
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
@@ -495,24 +509,24 @@ model Enrollment {
 // =====================================================================
 
 model ExamSession {
-  id           String            @id @default(cuid())
-  quizId       String
-  userId       String
-  status       ExamSessionStatus @default(SCHEDULED)
-  startedAt    DateTime?
-  endsAt       DateTime?
-  submittedAt  DateTime?
-  durationSec  Int               // copied from Quiz.timerSec at creation
-  webcamEnabled Boolean          @default(false)
-  webcamIntervalSec Int          @default(60)
-  maxViolations Int              @default(3)
-  violationCount Int             @default(0)
-  score        Int?
-  passed       Boolean           @default(false)
-  attemptId    String?           @unique
-  proctorMessage   String?       @db.Text
-  proctorMessageAt DateTime?
-  createdAt    DateTime          @default(now())
+  id                String            @id @default(cuid())
+  quizId            String
+  userId            String
+  status            ExamSessionStatus @default(SCHEDULED)
+  startedAt         DateTime?
+  endsAt            DateTime?
+  submittedAt       DateTime?
+  durationSec       Int // copied from Quiz.timerSec at creation
+  webcamEnabled     Boolean           @default(false)
+  webcamIntervalSec Int               @default(60)
+  maxViolations     Int               @default(3)
+  violationCount    Int               @default(0)
+  score             Int?
+  passed            Boolean           @default(false)
+  attemptId         String?           @unique
+  proctorMessage    String?           @db.Text
+  proctorMessageAt  DateTime?
+  createdAt         DateTime          @default(now())
 
   quiz       Quiz             @relation(fields: [quizId], references: [id], onDelete: Cascade)
   user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -565,16 +579,16 @@ model Badge {
   code        String   @unique
   name        String
   description String
-  iconClass   String   // e.g. "fa-solid fa-medal"
+  iconClass   String // e.g. "fa-solid fa-medal"
   createdAt   DateTime @default(now())
 
   awards UserBadge[]
 }
 
 model UserBadge {
-  id       String   @id @default(cuid())
-  userId   String
-  badgeId  String
+  id        String   @id @default(cuid())
+  userId    String
+  badgeId   String
   awardedAt DateTime @default(now())
 
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -608,13 +622,13 @@ model MerchRedemption {
   // DB-level default lets migrations backfill existing rows safely; the API
   // replaces this with the nicer "UTC-RDM-XXXXXXXX" format on every new redemption.
   pickupCode      String           @unique @default(cuid())
-  voucherCode     String?          // for VOUCHER kind: filled in by admin and revealed to user
+  voucherCode     String? // for VOUCHER kind: filled in by admin and revealed to user
   deliveryMethod  DeliveryMethod   @default(PICKUP)
   deliveryAddress String?          @db.Text // when SHIPPED
   deliveryNotes   String?          @db.Text // user note (e.g. ukuran kaos)
-  trackingNumber  String?          // shipping tracking
+  trackingNumber  String? // shipping tracking
   adminNotes      String?          @db.Text // notes from admin
-  voucherSentAt   DateTime?        // timestamp when voucher code was sent
+  voucherSentAt   DateTime? // timestamp when voucher code was sent
   redeemedAt      DateTime         @default(now())
   // @default(now()) makes the column backfillable during migration.
   updatedAt       DateTime         @default(now()) @updatedAt
@@ -631,14 +645,14 @@ model MerchRedemption {
 // =====================================================================
 
 model CertificateTemplate {
-  id              String  @id @default(cuid())
-  courseId        String? @unique
-  labId           String?
-  name            String
-  backgroundUrl   String
-  fieldsJson      Json    // positions for name, certNumber, date, etc
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id            String   @id @default(cuid())
+  courseId      String?  @unique
+  labId         String?
+  name          String
+  backgroundUrl String
+  fieldsJson    Json // positions for name, certNumber, date, etc
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   course Course? @relation(fields: [courseId], references: [id], onDelete: Cascade)
   lab    Lab?    @relation(fields: [labId], references: [id], onDelete: Cascade)
@@ -759,7 +773,7 @@ model CustomRolePermission {
 }
 
 model CustomRolePolicy {
-  id           String   @id @default(cuid())
+  id           String @id @default(cuid())
   customRoleId String
   policyId     String
 
@@ -780,4 +794,66 @@ model UserCustomRole {
 
   @@unique([userId, customRoleId])
   @@index([userId])
+}
+
+// =====================================================================
+// EVENT / CAMPAIGN
+// =====================================================================
+// Event/kampanye yang bisa diumumkan di landing page (isPublic=true) dan
+// dashboard mahasiswa. Mahasiswa melakukan presensi di akhir event lewat
+// kode kehadiran. Saat admin memfinalisasi event, semua presensi yang valid
+// otomatis diberi poin sebesar `pointReward` (PointEvent.EVENT_ATTENDANCE).
+// `status` dapat diubah manual sebagai override, tapi normalnya mengikuti
+// transisi: DRAFT -> PUBLISHED -> ONGOING -> COMPLETED.
+model Event {
+  id                 String      @id @default(cuid())
+  slug               String      @unique
+  title              String
+  description        String?     @db.Text
+  posterUrl          String?
+  location           String?
+  // Waktu mulai/akhir event. attendanceOpensAt/closesAt mengatur jendela
+  // input presensi (default: sama dengan startsAt..endsAt + 1 jam).
+  startsAt           DateTime
+  endsAt             DateTime
+  attendanceOpensAt  DateTime?
+  attendanceClosesAt DateTime?
+  // Kode presensi yang dibagikan ke peserta saat event (mis. "UTC2025-A1").
+  // Bisa di-rotate kapan saja oleh admin. null = check-in tanpa kode (mode terbuka).
+  attendanceCode     String?
+  // Custom reward — admin bebas set per event. 0 = event tanpa poin.
+  pointReward        Int         @default(50)
+  status             EventStatus @default(DRAFT)
+  // Tampilkan di landing page publik (selain dashboard internal).
+  isPublic           Boolean     @default(true)
+  // Lab penyelenggara (opsional — null = event UTC pusat).
+  labId              String?
+  createdById        String?
+  // Stempel waktu finalisasi (saat poin sudah didistribusi). Mencegah double-award.
+  finalizedAt        DateTime?
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  lab         Lab?              @relation(fields: [labId], references: [id], onDelete: SetNull)
+  createdBy   User?             @relation("EventCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  attendances EventAttendance[]
+
+  @@index([status, startsAt])
+  @@index([isPublic, status])
+}
+
+model EventAttendance {
+  id            String    @id @default(cuid())
+  eventId       String
+  userId        String
+  checkedInAt   DateTime  @default(now())
+  note          String?   @db.Text // feedback singkat / catatan kehadiran
+  pointsAwarded Int       @default(0) // diisi saat event difinalisasi
+  awardedAt     DateTime?
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@index([eventId, checkedInAt])
 }

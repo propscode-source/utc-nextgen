@@ -13,6 +13,8 @@ import {
   faStore,
   faTrophy,
   faBoxArchive,
+  faCalendarDays,
+  faBullhorn,
   type IconDefinition,
 } from "@fortawesome/free-solid-svg-icons";
 import type { Role } from "@prisma/client";
@@ -48,6 +50,8 @@ export const NAV: NavItem[] = [
   { label: "Penilaian Essay", href: "/proctor/grading", icon: faClipboardCheck, roles: ["PROCTOR", "SUPERADMIN"] },
   { label: "Leaderboard", href: "/leaderboard", icon: faMedal, roles: ["MAHASISWA", "LAB_ADMIN", "PROCTOR", "SUPERADMIN"] },
   { label: "Tukar Poin", href: "/redeem", icon: faGift, roles: ["MAHASISWA", "LAB_ADMIN", "PROCTOR", "SUPERADMIN"] },
+  { label: "Event & Kampanye", href: "/events", icon: faCalendarDays, roles: ["MAHASISWA", "LAB_ADMIN", "PROCTOR", "SUPERADMIN"] },
+  { label: "Kelola Event", href: "/admin/events", icon: faBullhorn, roles: ["LAB_ADMIN", "SUPERADMIN"] },
   { label: "Kelola Merch", href: "/admin/merch", icon: faStore, roles: ["LAB_ADMIN", "SUPERADMIN"] },
   { label: "Penukaran", href: "/admin/redemptions", icon: faBoxArchive, roles: ["LAB_ADMIN", "SUPERADMIN"] },
   { label: "Kelola Badge", href: "/admin/badges", icon: faTrophy, roles: ["SUPERADMIN"] },

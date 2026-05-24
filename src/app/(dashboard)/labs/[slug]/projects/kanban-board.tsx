@@ -20,6 +20,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { SearchInput } from "@/components/ui/search-input";
 import { ProjectCreateDialog } from "./project-create-dialog";
 import { ProjectDetailDialog } from "./project-detail-dialog";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -59,6 +60,7 @@ export function KanbanBoard({
   const [items, setItems] = useState<ProjectCard[]>(projects);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [openProjectId, setOpenProjectId] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
   const router = useRouter();
 
   useEffect(() => {
@@ -67,12 +69,22 @@ export function KanbanBoard({
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
 
+  const visibleItems = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return items;
+    return items.filter((p) =>
+      `${p.title} ${p.description ?? ""} ${p.milestones.map((m) => m.title).join(" ")}`
+        .toLowerCase()
+        .includes(q)
+    );
+  }, [items, query]);
+
   const grouped = useMemo(() => {
     const map: Record<Status, ProjectCard[]> = { TODO: [], IN_PROGRESS: [], REVIEW: [], DONE: [] };
-    for (const p of items) map[p.status].push(p);
+    for (const p of visibleItems) map[p.status].push(p);
     for (const k of Object.keys(map) as Status[]) map[k].sort((a, b) => a.position - b.position);
     return map;
-  }, [items]);
+  }, [visibleItems]);
 
   const activeProject = activeId ? items.find((i) => i.id === activeId) ?? null : null;
 
@@ -151,11 +163,15 @@ export function KanbanBoard({
 
   return (
     <div className="space-y-4">
-      {canManage && (
-        <div className="flex justify-end">
-          <ProjectCreateDialog labId={labId} />
-        </div>
-      )}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end sm:gap-4">
+        <SearchInput
+          value={query}
+          onChange={setQuery}
+          placeholder="Cari project, deskripsi, atau milestone..."
+          containerClassName="w-full sm:w-64 md:w-80"
+        />
+        {canManage && <ProjectCreateDialog labId={labId} />}
+      </div>
 
       <DndContext
         sensors={sensors}

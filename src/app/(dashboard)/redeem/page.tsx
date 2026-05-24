@@ -3,10 +3,10 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { RedeemButton } from "./redeem-button";
 import { formatDate, formatPoints } from "@/lib/utils";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faGift, faCoins, faBoxesStacked, faTicket, faTruck, faStore as faStoreIcon } from "@fortawesome/free-solid-svg-icons";
+import { faCoins, faTruck, faStore as faStoreIcon } from "@fortawesome/free-solid-svg-icons";
+import { MerchGrid, type MerchItem } from "./merch-grid";
 
 export const metadata: Metadata = { title: "Tukar Poin" };
 
@@ -47,6 +47,16 @@ export default async function RedeemPage() {
     }),
   ]);
 
+  const merchItems: MerchItem[] = items.map((it) => ({
+    id: it.id,
+    name: it.name,
+    description: it.description,
+    imageUrl: it.imageUrl,
+    kind: it.kind,
+    pointPrice: it.pointPrice,
+    stock: it.stock,
+  }));
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -63,73 +73,7 @@ export default async function RedeemPage() {
         </Badge>
       </div>
 
-      {items.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center text-sm text-muted-foreground">
-            <FontAwesomeIcon icon={faGift} className="h-8 w-8 mb-3 text-muted-foreground" />
-            <p>Belum ada merchandise yang tersedia.</p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {items.map((item) => {
-            const outOfStock = item.stock === 0;
-            const cantAfford = session.user.points < item.pointPrice;
-            return (
-              <Card key={item.id} className="flex flex-col">
-                <div className="aspect-video bg-muted overflow-hidden rounded-t-xl flex items-center justify-center">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  {item.imageUrl ? (
-                    <img src={item.imageUrl} alt={item.name} className="h-full w-full object-cover" />
-                  ) : (
-                    <FontAwesomeIcon
-                      icon={item.kind === "VOUCHER" ? faTicket : faGift}
-                      className="h-10 w-10 text-muted-foreground"
-                    />
-                  )}
-                </div>
-                <CardHeader className="space-y-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <Badge variant={item.kind === "VOUCHER" ? "info" : "secondary"} className="text-[10px]">
-                      {item.kind === "VOUCHER" ? "Voucher digital" : "Barang fisik"}
-                    </Badge>
-                  </div>
-                  <CardTitle className="text-base">{item.name}</CardTitle>
-                  {item.description && (
-                    <p className="text-xs text-muted-foreground line-clamp-2">{item.description}</p>
-                  )}
-                </CardHeader>
-                <CardContent className="flex-1 flex flex-col gap-3">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="inline-flex items-center gap-1 font-bold text-amber-500">
-                      <FontAwesomeIcon icon={faCoins} className="h-3 w-3" />
-                      {formatPoints(item.pointPrice)}
-                    </span>
-                    {item.stock < 0 ? (
-                      <span className="text-muted-foreground">Stok tak terbatas</span>
-                    ) : outOfStock ? (
-                      <Badge variant="destructive">Habis</Badge>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 text-muted-foreground">
-                        <FontAwesomeIcon icon={faBoxesStacked} className="h-3 w-3" />
-                        {item.stock} stok
-                      </span>
-                    )}
-                  </div>
-                  <RedeemButton
-                    itemId={item.id}
-                    itemName={item.name}
-                    itemKind={item.kind}
-                    pointPrice={item.pointPrice}
-                    disabled={outOfStock || cantAfford}
-                    insufficient={cantAfford}
-                  />
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      )}
+      <MerchGrid items={merchItems} userPoints={session.user.points} />
 
       <Card>
         <CardHeader>

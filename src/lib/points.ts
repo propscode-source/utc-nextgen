@@ -19,6 +19,7 @@ export const POINT_VALUES: Record<PointEvent, number> = {
   COURSE_UNLOCK: 0,   // negative supplied by caller
   MERCH_REDEEM: 0,    // negative supplied by caller
   ADMIN_ADJUST: 0,    // value supplied by caller
+  EVENT_ATTENDANCE: 0, // per-event reward supplied by caller (Event.pointReward)
 };
 
 type AwardOpts = {

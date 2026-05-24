@@ -63,9 +63,47 @@
   * {
     @apply border-border;
   }
+  html {
+    /* Page-level scrollbar hidden but page remains scrollable
+       (wheel, touch, keyboard, programmatic scrollTo all still work). */
+    scrollbar-width: none;            /* Firefox */
+    -ms-overflow-style: none;         /* IE/Edge legacy */
+  }
+  html::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;                    /* Chromium / Safari / Edge */
+  }
   body {
     @apply bg-background text-foreground antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
+    overflow-x: hidden;               /* prevent horizontal scroll on mobile */
+    /* iOS / Android: prevent the OS from auto-scaling text after rotation */
+    -webkit-text-size-adjust: 100%;
+            text-size-adjust: 100%;
+    /* Respect notches & home-indicator on phones */
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+  body::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Make raster media intrinsically responsive by default.
+     Excludes SVG (icons set their own h/w via utility classes). */
+  img, video, canvas {
+    max-width: 100%;
+    height: auto;
+  }
+  iframe {
+    max-width: 100%;
+  }
+
+  /* Tap targets remain comfortable on touch devices */
+  @media (hover: none) and (pointer: coarse) {
+    a, button, [role="button"] {
+      touch-action: manipulation;
+    }
   }
 }
 
@@ -130,6 +168,77 @@
   .font-mono-tnum {
     font-variant-numeric: tabular-nums;
     font-feature-settings: "tnum" 1, "ss01" 1;
+  }
+
+  /* === Auto-scrolling marquee (feature carousel) === */
+  .marquee {
+    /* Fade left + right edges into transparent — produces the "blur" boundary look.
+       Combined with backdrop-blur on the gradient pseudo-elements in the JSX. */
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent 0,
+      #000 12%,
+      #000 88%,
+      transparent 100%
+    );
+            mask-image: linear-gradient(
+      to right,
+      transparent 0,
+      #000 12%,
+      #000 88%,
+      transparent 100%
+    );
+  }
+  .marquee-track {
+    /* Seamless infinite loop. Track contains 2× cards laid out flat with a
+       uniform gap, and the wrapping container adds a trailing padding equal
+       to that gap. Total = 8·card + 8·gap, so translating by -50% maps card
+       #5 exactly onto card #1's position — no visual jump on loop restart. */
+    animation: marquee-scroll 32s linear infinite;
+    width: max-content;
+    /* GPU-accel + composite hint for smooth, judder-free motion */
+    will-change: transform;
+    transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+  .marquee:hover .marquee-track {
+    animation-play-state: paused;
+  }
+  @keyframes marquee-scroll {
+    from { transform: translate3d(0, 0, 0); }
+    to   { transform: translate3d(-50%, 0, 0); }
+  }
+
+  /* Cards pulse a touch larger as they pass through the visible center.
+     Each card uses the same animation with a staggered delay so at any moment
+     the card currently near the middle is at its peak scale.
+     `both` keeps the last keyframe value during the brief hand-off across
+     loop iterations so there is no jitter, and scale is composited via
+     translateZ so the GPU handles it. */
+  .marquee-card {
+    animation: card-spotlight 7s ease-in-out infinite both;
+    transform-origin: center center;
+    will-change: transform, opacity;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+  @keyframes card-spotlight {
+    0%, 100% { transform: translateZ(0) scale(0.92); opacity: 0.78; }
+    50%      { transform: translateZ(0) scale(1.06); opacity: 1; }
+  }
+
+  /* Respect users who prefer no motion */
+  @media (prefers-reduced-motion: reduce) {
+    .marquee-track,
+    .marquee-card,
+    .tech-scan {
+      animation: none !important;
+    }
+    .marquee-card {
+      transform: none;
+      opacity: 1;
+    }
   }
 
   /* === HOVER → WHITE TEXT (user-requested behavior) ===

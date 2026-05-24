@@ -5,18 +5,19 @@ import { faShieldHalved, faMedal, faCertificate, faGraduationCap } from "@fortaw
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="relative grid min-h-screen md:grid-cols-2 overflow-hidden bg-background">
+    <div className="relative grid min-h-[100svh] w-full max-w-[100vw] md:grid-cols-2 overflow-x-hidden bg-background">
       {/* Left: form */}
-      <div className="relative flex flex-col justify-center px-6 py-10 md:px-12">
+      <div className="relative flex flex-col justify-center px-4 sm:px-6 py-8 sm:py-10 md:px-12">
         <div className="pointer-events-none absolute inset-0 bg-circuit opacity-40" />
-        <Link href="/" className="relative mb-8 inline-flex items-center self-start">
+        <Link href="/" className="relative mb-6 sm:mb-8 inline-flex items-center self-start">
           <Image
             src="/logo.png"
             alt="UTC NextGen — Unsri Training Center"
             width={1980}
             height={780}
             priority
-            className="h-12 w-auto"
+            sizes="(max-width: 640px) 140px, (max-width: 1024px) 180px, 220px"
+            className="h-10 sm:h-12 w-auto"
           />
         </Link>
         <div className="relative mx-auto w-full max-w-sm">{children}</div>
@@ -30,8 +31,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         <div className="absolute top-0 inset-x-0 h-px tech-scan opacity-70" />
 
         <div className="relative z-10 max-w-md px-8 text-center text-white">
-          <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 backdrop-blur px-3 py-1 text-[11px] font-medium uppercase tracking-wider">
-            <span className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse" />
+          <div className="mx-auto inline-flex items-center rounded-full border border-white/20 bg-white/10 backdrop-blur px-3 py-1 text-[11px] font-medium uppercase tracking-wider">
             UTC NextGen Platform
           </div>
           <h2 className="mt-5 text-3xl font-bold tracking-tight">

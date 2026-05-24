@@ -1,0 +1,11 @@
+import { PageHeaderSkeleton, FiltersBarSkeleton, CardGridSkeleton } from "@/components/ui/skeletons";
+
+export default function Loading() {
+  return (
+    <div className="space-y-6">
+      <PageHeaderSkeleton />
+      <FiltersBarSkeleton chips={3} />
+      <CardGridSkeleton count={6} />
+    </div>
+  );
+}
